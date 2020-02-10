@@ -2,6 +2,8 @@
 <!-- refs: 
 	https://tonejs.github.io/examples/meter.html
 	https://stackoverflow.com/questions/44360301/web-audio-api-creating-a-peak-meter-with-analysernode
+	https://stackoverflow.com/questions/38701803/how-to-get-element-in-user-agent-shadow-root-with-javascript
+	https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver
 -->
 <!DOCTYPE html>
 <html>
@@ -37,6 +39,12 @@
 			<tone-meter level color="#eee"></tone-meter>
 			<tone-play-toggle></tone-play-toggle>
 			Select a file: <input type="file" id="i_file" value=""><br><br>
+			<div>Peak:</div>
+			<div id="biglvl">NO AUDIO YET</div>
+			<!-- this is what the shadow DOM looks like
+			<div id="level1" style="color:#eee">
+				<div class="level1">-Infinity</div>
+			</div> -->
 		</tone-content>
 
 		<tone-drawer>
@@ -45,7 +53,61 @@
 	<!-- </tone-example> -->
 
 	<script type="text/javascript">
+		console.log("ready to print");
+		// var container = document.querySelector('tone-meter');
+		// //Access the element inside the shadow !
+		// //"container.shadowRoot" represents the youngest shadow root that is hosted on the element !
+		// var currentlevel = "";
+		// currentlevel = $(container.shadowRoot.querySelector("#level")).text();
+		// console.log(currentlevel);
+		var lvlcontainer = document.querySelector('tone-meter').shadowRoot.querySelector("#level > div");
+  		var peak = -999;
+
+  		//const targetNode = document.getElementById('some-id');
+		// Options for the observer (which mutations to observe)
+		const config = { attributes: true, childList: true, subtree: true };
+		// Callback function to execute when mutations are observed
+		const callback = function(mutationsList, observer) {
+		    // Use traditional 'for loops' for IE 11
+		    var str = "";
+      		str = $( lvlcontainer ).text();
+      		//console.log();
+      		//str = parseFloat(str);
+			if (parseFloat(str)>peak) {
+				$( "#biglvl" ).text( str );
+				peak = parseFloat(str);
+			};
+			//$( "#biglvl" ).text( str );
+		    // for(let mutation of mutationsList) {
+		    //     if (mutation.type === 'childList') {
+		    //         console.log('A child node has been added or removed.');
+		    //     }
+		    //     else if (mutation.type === 'attributes') {
+		    //         console.log('The ' + mutation.attributeName + ' attribute was modified.');
+		    //     }
+		    // }
+		};
+		// Create an observer instance linked to the callback function
+		const observer = new MutationObserver(callback);
+		// Start observing the target node for configured mutations
+		observer.observe(lvlcontainer, config);
+		// Later, you can stop observing
+		// observer.disconnect();
+		
+		// $(lvlcontainer).change( function(){
+		// 	var str = "";
+		//  str = $( this ).text();
+		// 	console.log(str);
+		// 	//$( "#biglvl" ).text( str );
+		// });
+		// $('#level > div').change( function(){
+		// 	var str = "";
+  		//  str = $( this ).text();
+		// 	console.log(str);
+		// 	//$( "#biglvl" ).text( str );
+		// });
 		$('#i_file').change( function(event) {
+			peak = -999;
 			var tmppath = URL.createObjectURL(event.target.files[0]);
 			//the player
 			var player = new Tone.Player({
@@ -57,16 +119,8 @@
 			document.querySelector("tone-play-toggle").bind(player);
 			document.querySelector("tone-meter").bind(player);
 			document.querySelector("tone-player").bind(player);
+			console.log("file loaded");
 		});
-		// var player = new Tone.Player({
-		// 	"url" : "./audio/FWDL.[mp3|ogg]",
-		// 	"loop" : true
-		// }).toMaster();
-
-		// //bind the interface
-		// document.querySelector("tone-play-toggle").bind(player);
-		// document.querySelector("tone-meter").bind(player);
-		// document.querySelector("tone-player").bind(player);
 	</script>
 </body>
 </html>
